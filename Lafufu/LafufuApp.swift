@@ -9,9 +9,15 @@ import SwiftUI
 
 @main
 struct LafufuApp: App {
+    @State private var hasCompletedOnboarding = UserDefaults.standard.string(forKey: "userName") != nil
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if hasCompletedOnboarding {
+                ContentView()
+            } else {
+                OnboardingView()
+            }
         }
     }
 }

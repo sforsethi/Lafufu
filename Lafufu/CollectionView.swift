@@ -11,34 +11,7 @@ struct CollectionView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Labubu selection card
-            VStack {
-                Button {
-                    // Labubu selection action
-                } label: {
-                    HStack {
-                        Text("Labubu")
-                            .font(.system(size: 28, weight: .medium))
-                            .foregroundColor(.black)
-                        
-                        Spacer()
-                        
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(.gray)
-                    }
-                    .padding(.horizontal, 32)
-                    .padding(.vertical, 24)
-                    .background(
-                        RoundedRectangle(cornerRadius: 25)
-                            .fill(Color(hex: "E8E3F5"))
-                    )
-                }
-            }
-            .padding(.horizontal, 24)
-            .padding(.top, 32)
             
-            // My Collection title
             HStack {
                 Text("My Collection")
                     .font(.system(size: 36, weight: .medium))
