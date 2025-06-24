@@ -9,6 +9,7 @@ import SwiftUI
 
 struct CollectionView: View {
     @StateObject private var collectionManager = UserCollectionManager.shared
+    @State private var showingShareCard = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -19,6 +20,29 @@ struct CollectionView: View {
                     .foregroundColor(.black)
                 
                 Spacer()
+                
+                Button(action: {
+                    showingShareCard = true
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Share")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color(hex: "667eea"), Color(hex: "764ba2")]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .clipShape(Capsule())
+                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                }
             }
             .padding(.horizontal, 24)
             .padding(.top, 40)
@@ -88,6 +112,9 @@ struct CollectionView: View {
         .onAppear {
             // Force refresh data when view appears
             collectionManager.refreshData()
+        }
+        .sheet(isPresented: $showingShareCard) {
+            ShareCardGeneratorView()
         }
     }
     
