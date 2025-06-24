@@ -253,6 +253,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = HedgeHog;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Lafufu needs access to your camera to take photos of your Labubu collection for your personal collection tracker.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Lafufu needs access to your photo library to select photos of your Labubu collection for your personal collection tracker.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -295,6 +296,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = HedgeHog;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Lafufu needs access to your camera to take photos of your Labubu collection for your personal collection tracker.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Lafufu needs access to your photo library to select photos of your Labubu collection for your personal collection tracker.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;

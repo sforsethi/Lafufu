@@ -7,26 +7,62 @@
 
 import SwiftUI
 
+import SwiftUI
+
 struct ExploreView: View {
-    @State private var expandedSeries: Set<UUID> = Set(labubuSeries.map { $0.id })
-    
+    @State private var expandedSeries: Set<UUID> = Set(toySeries.map { $0.id })
+    @State private var searchText: String = "" // State variable for the search text
+
+    var filteredSeries: [ToySeries] {
+        if searchText.isEmpty {
+            return toySeries
+        } else {
+            return toySeries.filter { series in
+                series.name.localizedCaseInsensitiveContains(searchText) ||
+                series.chineseName.localizedCaseInsensitiveContains(searchText) ||
+                series.releases.contains(where: { release in
+                    release.name.localizedCaseInsensitiveContains(searchText) ||
+                    release.chineseName.localizedCaseInsensitiveContains(searchText) ||
+                    release.description.localizedCaseInsensitiveContains(searchText)
+                })
+            }
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // Explore title
             HStack {
-                Text("All Series")
-                    .font(.system(size: 36, weight: .medium))
-                    .foregroundColor(.black)
-                
+                VStack(alignment: .leading, spacing: 2) {
+                    if let userName = UserDefaults.standard.string(forKey: "userName") {
+                        Text("Hi, \(userName)!")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.gray)
+                    }
+                    Text("All Series")
+                        .font(.system(size: 36, weight: .medium))
+                        .foregroundColor(.black)
+                }
+
                 Spacer()
             }
             .padding(.horizontal, 24)
             .padding(.top, 40)
-            
+
+            // Search Bar
+            TextField("Search series or releases...", text: $searchText)
+                .padding(.vertical, 12)
+                .padding(.horizontal)
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+                .padding(.bottom, 8)
+
             // Series list
             ScrollView {
                 LazyVStack(spacing: 20) {
-                    ForEach(labubuSeries) { series in
+                    ForEach(filteredSeries) { series in // Use filteredSeries here
                         SeriesCardView(
                             series: series,
                             isExpanded: expandedSeries.contains(series.id)
@@ -38,6 +74,13 @@ struct ExploreView: View {
                             }
                         }
                     }
+                    // Handle case when no results are found
+                    if filteredSeries.isEmpty && !searchText.isEmpty {
+                        Text("No results found for \"\(searchText)\"")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(.gray)
+                            .padding(.top, 50)
+                    }
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 24)
@@ -46,7 +89,6 @@ struct ExploreView: View {
         }
     }
 }
-
 struct CollectionItemView: View {
     let imageName: String
     let title: String
@@ -60,9 +102,7 @@ struct CollectionItemView: View {
                     .frame(height: 180)
                 
                 if isVisible {
-                    // Placeholder for actual Labubu images
                     ZStack {
-                        // Base Labubu shape
                         RoundedRectangle(cornerRadius: 15)
                             .fill(Color(hex: "F5E6D3"))
                             .frame(width: 100, height: 120)
@@ -181,7 +221,7 @@ struct CollectionItemView: View {
 }
 
 struct ReleaseItemView: View {
-    let release: LabubuRelease
+    let release: ToyRelease
     @State private var showingDetail = false
     
     var body: some View {
@@ -251,7 +291,7 @@ struct ReleaseItemView: View {
             showingDetail = true
         }
         .sheet(isPresented: $showingDetail) {
-            LabubuDetailView(release: release)
+            ToyDetailView(release: release)
         }
     }
     
@@ -784,7 +824,7 @@ struct ReleaseItemView: View {
 }
  
 struct SeriesCardView: View {
-    let series: LabubuSeries
+    let series: ToySeries
     let isExpanded: Bool
     let onToggle: () -> Void
     

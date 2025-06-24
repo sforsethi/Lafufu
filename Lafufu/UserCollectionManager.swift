@@ -11,134 +11,155 @@ import UIKit
 class UserCollectionManager: ObservableObject {
     static let shared = UserCollectionManager()
     
-    private let favoritesKey = "user_favorites"
-    private let ownedItemsKey = "user_owned_items"
-    private let ownedImagesKey = "user_owned_images"
+    @Published private var ownedItems: Set<String> = []
+    @Published private var favoriteItems: Set<String> = []
+    @Published private var ownedImages: [String: Data] = [:]
     
-    @Published var favorites: Set<String> = []
-    @Published var ownedItems: Set<String> = []
-    @Published var ownedImages: [String: Data] = [:]
+    private let ownedItemsKey = "ownedItems"
+    private let favoriteItemsKey = "favoriteItems"
+    private let ownedImagesKey = "ownedImages"
     
     private init() {
-        loadFavorites()
-        loadOwnedItems()
-        loadOwnedImages()
+        loadData()
     }
     
-    // MARK: - Favorites Management
-    func addToFavorites(_ releaseId: String) {
-        favorites.insert(releaseId)
-        saveFavorites()
-    }
+    // MARK: - Data Persistence
     
-    func removeFromFavorites(_ releaseId: String) {
-        favorites.remove(releaseId)
-        saveFavorites()
-    }
-    
-    func isFavorite(_ releaseId: String) -> Bool {
-        return favorites.contains(releaseId)
-    }
-    
-    func toggleFavorite(_ releaseId: String) {
-        if isFavorite(releaseId) {
-            removeFromFavorites(releaseId)
-        } else {
-            addToFavorites(releaseId)
+    private func loadData() {
+        // Load owned items
+        if let ownedData = UserDefaults.standard.array(forKey: ownedItemsKey) as? [String] {
+            ownedItems = Set(ownedData)
+        }
+        
+        // Load favorite items
+        if let favoriteData = UserDefaults.standard.array(forKey: favoriteItemsKey) as? [String] {
+            favoriteItems = Set(favoriteData)
+        }
+        
+        // Load owned images
+        if let imagesData = UserDefaults.standard.data(forKey: ownedImagesKey),
+           let decodedImages = try? JSONDecoder().decode([String: Data].self, from: imagesData) {
+            ownedImages = decodedImages
         }
     }
     
-    // MARK: - Owned Items Management
-    func addToOwned(_ releaseId: String) {
-        ownedItems.insert(releaseId)
-        saveOwnedItems()
-    }
-    
-    func removeFromOwned(_ releaseId: String) {
-        ownedItems.remove(releaseId)
-        saveOwnedItems()
-        // Also remove associated image
-        removeOwnedImage(releaseId)
-    }
-    
-    func isOwned(_ releaseId: String) -> Bool {
-        return ownedItems.contains(releaseId)
-    }
-    
-    func toggleOwned(_ releaseId: String) {
-        if isOwned(releaseId) {
-            removeFromOwned(releaseId)
-        } else {
-            addToOwned(releaseId)
+    // Force refresh data method
+    func refreshData() {
+        DispatchQueue.main.async {
+            self.loadData()
+            print("DEBUG: After refresh - Owned items: \(Array(self.ownedItems))")
+            print("DEBUG: After refresh - Favorite items: \(Array(self.favoriteItems))")
+            self.objectWillChange.send()
         }
     }
     
-    // MARK: - Owned Images Management
-    func addOwnedImage(_ releaseId: String, imageData: Data) {
-        ownedImages[releaseId] = imageData
-        saveOwnedImages()
-    }
-    
-    func removeOwnedImage(_ releaseId: String) {
-        ownedImages.removeValue(forKey: releaseId)
-        saveOwnedImages()
-    }
-    
-    func getOwnedImage(_ releaseId: String) -> UIImage? {
-        guard let imageData = ownedImages[releaseId] else { return nil }
-        return UIImage(data: imageData)
-    }
-    
-    func hasOwnedImage(_ releaseId: String) -> Bool {
-        return ownedImages[releaseId] != nil
-    }
-    
-    // MARK: - UserDefaults Persistence
-    private func saveFavorites() {
-        UserDefaults.standard.set(Array(favorites), forKey: favoritesKey)
-    }
-    
-    private func loadFavorites() {
-        let savedFavorites = UserDefaults.standard.stringArray(forKey: favoritesKey) ?? []
-        favorites = Set(savedFavorites)
-    }
-    
-    private func saveOwnedItems() {
+    private func saveData() {
+        // Save owned items
         UserDefaults.standard.set(Array(ownedItems), forKey: ownedItemsKey)
+        
+        // Save favorite items
+        UserDefaults.standard.set(Array(favoriteItems), forKey: favoriteItemsKey)
+        
+        // Save owned images
+        if let encodedImages = try? JSONEncoder().encode(ownedImages) {
+            UserDefaults.standard.set(encodedImages, forKey: ownedImagesKey)
+        }
+        
+        // Force UI update after saving
+        DispatchQueue.main.async {
+            self.objectWillChange.send()
+        }
     }
     
-    private func loadOwnedItems() {
-        let savedOwnedItems = UserDefaults.standard.stringArray(forKey: ownedItemsKey) ?? []
-        ownedItems = Set(savedOwnedItems)
+    // MARK: - Ownership Management
+    
+    func toggleOwned(_ imageName: String) {
+        print("DEBUG: Toggling owned for: \(imageName)")
+        if ownedItems.contains(imageName) {
+            ownedItems.remove(imageName)
+            // Also remove image if it exists
+            ownedImages.removeValue(forKey: imageName)
+            print("DEBUG: Removed \(imageName) from owned")
+        } else {
+            ownedItems.insert(imageName)
+            print("DEBUG: Added \(imageName) to owned")
+        }
+        print("DEBUG: Current owned items: \(Array(ownedItems))")
+        saveData()
     }
     
-    private func saveOwnedImages() {
-        UserDefaults.standard.set(ownedImages, forKey: ownedImagesKey)
-    }
-    
-    private func loadOwnedImages() {
-        ownedImages = UserDefaults.standard.dictionary(forKey: ownedImagesKey) as? [String: Data] ?? [:]
-    }
-    
-    // MARK: - Statistics
-    func getFavoritesCount() -> Int {
-        return favorites.count
+    func isOwned(_ imageName: String) -> Bool {
+        return ownedItems.contains(imageName)
     }
     
     func getOwnedCount() -> Int {
         return ownedItems.count
     }
     
-    func getCompletionPercentage() -> Double {
-        let totalItems = getAllReleasesCount()
-        guard totalItems > 0 else { return 0.0 }
-        return Double(ownedItems.count) / Double(totalItems) * 100.0
+    // MARK: - Favorites Management
+    
+    func toggleFavorite(_ imageName: String) {
+        print("DEBUG: Toggling favorite for: \(imageName)")
+        if favoriteItems.contains(imageName) {
+            favoriteItems.remove(imageName)
+            print("DEBUG: Removed \(imageName) from favorites")
+        } else {
+            favoriteItems.insert(imageName)
+            print("DEBUG: Added \(imageName) to favorites")
+        }
+        print("DEBUG: Current favorite items: \(Array(favoriteItems))")
+        saveData()
     }
     
-    private func getAllReleasesCount() -> Int {
-        return labubuSeries.reduce(0) { total, series in
-            total + series.releases.count
-        }
+    func isFavorite(_ imageName: String) -> Bool {
+        return favoriteItems.contains(imageName)
+    }
+    
+    func getFavoritesCount() -> Int {
+        return favoriteItems.count
+    }
+    
+    // MARK: - Images Management
+    
+    func addOwnedImage(_ imageName: String, imageData: Data) {
+        ownedImages[imageName] = imageData
+        saveData()
+    }
+    
+    func getOwnedImage(_ imageName: String) -> UIImage? {
+        guard let imageData = ownedImages[imageName] else { return nil }
+        return UIImage(data: imageData)
+    }
+    
+    func hasOwnedImage(_ imageName: String) -> Bool {
+        return ownedImages[imageName] != nil
+    }
+    
+    func removeOwnedImage(_ imageName: String) {
+        ownedImages.removeValue(forKey: imageName)
+        saveData()
+    }
+    
+    // MARK: - Statistics
+    
+    func getCompletionPercentage() -> Double {
+        let totalItems = getAllReleases().count
+        guard totalItems > 0 else { return 0.0 }
+        return (Double(ownedItems.count) / Double(totalItems)) * 100.0
+    }
+    
+    private func getAllReleases() -> [ToyRelease] {
+        return toySeries.flatMap { $0.releases }
+    }
+    
+    // MARK: - Debug Methods
+    
+    func getStoredOwnedItems() -> [String] {
+        return Array(ownedItems)
+    }
+    
+    func getStoredFavoriteItems() -> [String] {
+        return Array(favoriteItems)
     }
 }
 

@@ -4,10 +4,11 @@
 //
 //  Created by Raghav Sethi on 21/06/25.
 //
+
 import SwiftUI
 
-struct LabubuDetailView: View {
-    let release: LabubuRelease
+struct ToyDetailView: View {
+    let release: ToyRelease
     @Environment(\.dismiss) private var dismiss
     @StateObject private var collectionManager = UserCollectionManager.shared
     @State private var showingImagePicker = false
@@ -15,27 +16,30 @@ struct LabubuDetailView: View {
     @State private var selectedImage: UIImage?
     @State private var imageSourceType: UIImagePickerController.SourceType = .photoLibrary
     
+    @State private var showShareSheet = false
+    @State private var compositeImage: UIImage?
+
+    
     private var isFavorite: Bool {
-        collectionManager.isFavorite(release.id.uuidString)
+        collectionManager.isFavorite(release.imageName)
     }
     
     private var isOwned: Bool {
-        collectionManager.isOwned(release.id.uuidString)
+        collectionManager.isOwned(release.imageName)
     }
     
     var body: some View {
         NavigationView {
             ScrollView {
+                 
                 VStack(spacing: 32) {
-                    // Hero Image Section
                     VStack(spacing: 16) {
                         ZStack {
                             RoundedRectangle(cornerRadius: 24)
                                 .fill(Color(hex: release.color).opacity(0.1))
                                 .frame(height: 300)
                             
-                            // Check if user has uploaded an image for this owned item
-                            if isOwned, let ownedImage = collectionManager.getOwnedImage(release.id.uuidString) {
+                            if isOwned, let ownedImage = collectionManager.getOwnedImage(release.imageName) {
                                 Image(uiImage: ownedImage)
                                     .resizable()
                                     .aspectRatio(contentMode: .fill)
@@ -128,7 +132,7 @@ struct LabubuDetailView: View {
                                 // Favorite Button
                                 Button {
                                     withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                                        collectionManager.toggleFavorite(release.id.uuidString)
+                                        collectionManager.toggleFavorite(release.imageName)
                                     }
                                 } label: {
                                     HStack(spacing: 8) {
@@ -156,7 +160,7 @@ struct LabubuDetailView: View {
                                 // Ownership Button
                                 Button {
                                     withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                                        collectionManager.toggleOwned(release.id.uuidString)
+                                        collectionManager.toggleOwned(release.imageName)
                                     }
                                 } label: {
                                     HStack(spacing: 8) {
@@ -188,11 +192,11 @@ struct LabubuDetailView: View {
                                     showingImageActionSheet = true
                                 } label: {
                                     HStack(spacing: 8) {
-                                        Image(systemName: collectionManager.hasOwnedImage(release.id.uuidString) ? "photo.fill" : "camera.fill")
+                                        Image(systemName: collectionManager.hasOwnedImage(release.imageName) ? "photo.fill" : "camera.fill")
                                             .font(.system(size: 18, weight: .semibold))
                                             .foregroundColor(Color.blue)
                                         
-                                        Text(collectionManager.hasOwnedImage(release.id.uuidString) ? "Update Photo" : "Add Photo")
+                                        Text(collectionManager.hasOwnedImage(release.imageName) ? "Update Photo" : "Add Photo")
                                             .font(.system(size: 16, weight: .semibold))
                                             .foregroundColor(Color.blue)
                                     }
@@ -207,6 +211,44 @@ struct LabubuDetailView: View {
                                             )
                                     )
                                 }
+                                                                
+//                                Button {
+//                                    print("➡️ Share button tapped.")
+//                                    
+//                                    if let userImage = collectionManager.getOwnedImage(release.imageName) {
+//                                        print("✅ Found owned image for \(release.imageName)")
+//                                        
+//                                        if let template = UIImage(named: "share-shot") {
+//                                            print("✅ Found share-shot template.")
+//                                            
+//                                            compositeImage = generateShareImage(background: template, overlay: userImage)
+//                                            showShareSheet = true
+//                                        } else {
+//                                            print("❌ Failed to load 'share-shot' image from assets. Make sure it's added and the name is correct.")
+//                                        }
+//                                    } else {
+//                                        print("❌ No owned image found for \(release.imageName).")
+//                                    }
+//                                    
+//
+//                                } label: {
+//                                    HStack(spacing: 8) {
+//                                        Image(systemName: "square.and.arrow.up")
+//                                            .font(.system(size: 18, weight: .semibold))
+//                                            .foregroundColor(Color.purple)
+//
+//                                        Text("Share My Collection")
+//                                            .font(.system(size: 16, weight: .semibold))
+//                                            .foregroundColor(Color.purple)
+//                                    }
+//                                    .padding(.horizontal, 20)
+//                                    .padding(.vertical, 12)
+//                                    .background(
+//                                        RoundedRectangle(cornerRadius: 25)
+//                                            .stroke(Color.purple, lineWidth: 2)
+//                                    )
+//                                }
+
                             }
                         }
                         .padding(.horizontal, 24)
@@ -298,10 +340,11 @@ struct LabubuDetailView: View {
                 }
             }
         }
+        
         .actionSheet(isPresented: $showingImageActionSheet) {
             ActionSheet(
                 title: Text("Add Photo"),
-                message: Text("Choose how you'd like to add a photo of your Labubu"),
+                message: Text("Choose how you'd like to add a photo of your toy"),
                 buttons: [
                     .default(Text("Camera")) {
                         imageSourceType = .camera
@@ -318,9 +361,15 @@ struct LabubuDetailView: View {
         .sheet(isPresented: $showingImagePicker) {
             ImagePicker(selectedImage: $selectedImage, isPresented: $showingImagePicker, sourceType: imageSourceType)
         }
+        .sheet(isPresented: $showShareSheet) {
+            ShareSheetWrapper(image: compositeImage)
+        }
+
+
+
         .onChange(of: selectedImage) { newImage in
             if let image = newImage, let imageData = image.jpegData(compressionQuality: 0.7) {
-                collectionManager.addOwnedImage(release.id.uuidString, imageData: imageData)
+                collectionManager.addOwnedImage(release.imageName, imageData: imageData)
             }
         }
     }
@@ -350,9 +399,9 @@ struct LabubuDetailView: View {
         }
     }
     
-    private func getSeriesName(for release: LabubuRelease) -> String {
-        for series in labubuSeries {
-            if series.releases.contains(where: { $0.id == release.id }) {
+    private func getSeriesName(for release: ToyRelease) -> String {
+        for series in toySeries {
+            if series.releases.contains(where: { $0.imageName == release.imageName }) {
                 return series.name
             }
         }
@@ -379,3 +428,54 @@ struct DetailRow: View {
         }
     }
 }
+
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+func generateShareImage(background: UIImage, overlay: UIImage) -> UIImage {
+    let size = background.size
+    print("🖼 Background size: \(size.width)x\(size.height)")
+    
+    UIGraphicsBeginImageContextWithOptions(size, false, 0)
+    background.draw(in: CGRect(origin: .zero, size: size))
+
+    let insetFrame = CGRect(x: size.width * 0.225, y: size.height * 0.25, width: size.width * 0.55, height: size.height * 0.35)
+    print("📐 Overlay frame: \(insetFrame)")
+    
+    overlay.draw(in: insetFrame)
+
+    let result = UIGraphicsGetImageFromCurrentImageContext()
+    UIGraphicsEndImageContext()
+    
+    if result == nil {
+        print("❌ Failed to generate composite image.")
+    } else {
+        print("✅ Composite image generated successfully.")
+    }
+    
+    return result ?? background
+}
+
+
+struct ShareSheetWrapper: View {
+    let image: UIImage?
+
+    var body: some View {
+        if let image = image {
+            ShareSheet(activityItems: [image])
+        } else {
+            Text("❌ No image to share.")
+                .font(.headline)
+                .padding()
+        }
+    }
+}
+
