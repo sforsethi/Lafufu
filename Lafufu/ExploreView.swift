@@ -7,85 +7,189 @@
 
 import SwiftUI
 
-import SwiftUI
-
 struct ExploreView: View {
     @State private var expandedSeries: Set<UUID> = Set(toySeries.map { $0.id })
-    @State private var searchText: String = "" // State variable for the search text
-
-    var filteredSeries: [ToySeries] {
-        if searchText.isEmpty {
-            return toySeries
-        } else {
-            return toySeries.filter { series in
-                series.name.localizedCaseInsensitiveContains(searchText) ||
-                series.chineseName.localizedCaseInsensitiveContains(searchText) ||
-                series.releases.contains(where: { release in
-                    release.name.localizedCaseInsensitiveContains(searchText) ||
-                    release.chineseName.localizedCaseInsensitiveContains(searchText) ||
-                    release.description.localizedCaseInsensitiveContains(searchText)
-                })
-            }
-        }
-    }
+    @StateObject private var searchManager = SearchManager()
+    @State private var showingFilters = false
+    @State private var showingGridView = false
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         VStack(spacing: 0) {
-            // Explore title
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    if let userName = UserDefaults.standard.string(forKey: "userName") {
-                        Text("Hi, \(userName)!")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.gray)
+            // Enhanced Header
+            VStack(spacing: 16) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        if let userName = UserDefaults.standard.string(forKey: "userName") {
+                            Text("Hi, \(userName)!")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(AppColors.secondaryText(for: colorScheme))
+                        }
+                        Text("Explore Collection")
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundColor(AppColors.primaryText(for: colorScheme))
                     }
-                    Text("All Series")
-                        .font(.system(size: 36, weight: .medium))
-                        .foregroundColor(.black)
+
+                    Spacer()
+                    
+                    // View Toggle Button
+                    Button(action: {
+                        showingGridView.toggle()
+                        HapticManager.selection()
+                    }) {
+                        Image(systemName: showingGridView ? "list.bullet" : "square.grid.2x2")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(AppColors.accent(for: colorScheme))
+                            .frame(width: 44, height: 44)
+                            .background(AppColors.cardBackground(for: colorScheme))
+                            .clipShape(Circle())
+                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                    }
                 }
-
-                Spacer()
-            }
-            .padding(.horizontal, 24)
-            .padding(.top, 40)
-
-            // Search Bar
-            TextField("Search series or releases...", text: $searchText)
-                .padding(.vertical, 12)
-                .padding(.horizontal)
-                .background(Color(.systemGray6))
-                .cornerRadius(10)
                 .padding(.horizontal, 24)
-                .padding(.top, 16)
-                .padding(.bottom, 8)
+                .padding(.top, 20)
 
-            // Series list
-            ScrollView {
-                LazyVStack(spacing: 20) {
-                    ForEach(filteredSeries) { series in // Use filteredSeries here
-                        SeriesCardView(
-                            series: series,
-                            isExpanded: expandedSeries.contains(series.id)
-                        ) {
+                // Enhanced Search Bar with Filters
+                HStack(spacing: 12) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(AppColors.secondaryText(for: colorScheme))
+                        
+                        TextField("Search toys, series, colors...", text: $searchManager.searchText)
+                            .textFieldStyle(PlainTextFieldStyle())
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(AppColors.cardBackground(for: colorScheme))
+                    .cornerRadius(12)
+                    .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+                    
+                    // Filter Button
+                    Button(action: {
+                        showingFilters = true
+                        HapticManager.impact(.light)
+                    }) {
+                        ZStack {
+                            Image(systemName: "line.3.horizontal.decrease.circle.fill")
+                                .font(.system(size: 24))
+                                .foregroundColor(searchManager.hasActiveFilters() ? AppColors.accent(for: colorScheme) : AppColors.secondaryText(for: colorScheme))
+                            
+                            if searchManager.hasActiveFilters() {
+                                Circle()
+                                    .fill(Color.red)
+                                    .frame(width: 8, height: 8)
+                                    .offset(x: 8, y: -8)
+                            }
+                        }
+                    }
+                    .frame(width: 44, height: 44)
+                    .background(AppColors.cardBackground(for: colorScheme))
+                    .clipShape(Circle())
+                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                }
+                .padding(.horizontal, 24)
+                
+                // Active Filters Display
+                if searchManager.hasActiveFilters() {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            if searchManager.filterOption != .all {
+                                FilterChip(
+                                    title: searchManager.filterOption.rawValue,
+                                    systemImage: searchManager.filterOption.systemImage
+                                ) {
+                                    searchManager.filterOption = .all
+                                }
+                            }
+                            
+                            if searchManager.sortOption != .alphabetical {
+                                FilterChip(
+                                    title: searchManager.sortOption.rawValue,
+                                    systemImage: searchManager.sortOption.systemImage
+                                ) {
+                                    searchManager.sortOption = .alphabetical
+                                }
+                            }
+                            
+                            ForEach(Array(searchManager.selectedSeries), id: \.self) { series in
+                                FilterChip(title: series, systemImage: "folder") {
+                                    searchManager.selectedSeries.remove(series)
+                                }
+                            }
+                            
+                            Button("Clear All") {
+                                searchManager.clearFilters()
+                                HapticManager.impact(.medium)
+                            }
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(AppColors.accent(for: colorScheme))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(AppColors.accent(for: colorScheme).opacity(0.1))
+                            .cornerRadius(16)
+                        }
+                        .padding(.horizontal, 24)
+                    }
+                }
+            }
+            .background(AppColors.background(for: colorScheme))
+
+            // Content
+            if showingGridView {
+                gridView
+            } else {
+                seriesListView
+            }
+        }
+        .background(AppColors.background(for: colorScheme))
+        .sheet(isPresented: $showingFilters) {
+            FilterSheet(searchManager: searchManager)
+        }
+    }
+    
+    private var seriesListView: some View {
+        ScrollView {
+            LazyVStack(spacing: 20) {
+                ForEach(searchManager.filteredSeries()) { series in
+                    SeriesCardView(
+                        series: series,
+                        isExpanded: expandedSeries.contains(series.id)
+                    ) {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                             if expandedSeries.contains(series.id) {
                                 expandedSeries.remove(series.id)
                             } else {
                                 expandedSeries.insert(series.id)
                             }
                         }
-                    }
-                    // Handle case when no results are found
-                    if filteredSeries.isEmpty && !searchText.isEmpty {
-                        Text("No results found for \"\(searchText)\"")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(.gray)
-                            .padding(.top, 50)
+                        HapticManager.impact(.light)
                     }
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 24)
-                .padding(.bottom, 100)
+                
+                // Empty state
+                if searchManager.filteredSeries().isEmpty {
+                    EmptySearchView(searchText: searchManager.searchText)
+                }
             }
+            .padding(.horizontal, 24)
+            .padding(.top, 24)
+            .padding(.bottom, 100)
+        }
+    }
+    
+    private var gridView: some View {
+        ScrollView {
+            LazyVGrid(columns: [
+                GridItem(.flexible(), spacing: 12),
+                GridItem(.flexible(), spacing: 12)
+            ], spacing: 16) {
+                ForEach(searchManager.filteredAndSortedReleases()) { release in
+                    CompactReleaseCard(release: release)
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 24)
+            .padding(.bottom, 100)
         }
     }
 }

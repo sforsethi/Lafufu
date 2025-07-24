@@ -10,19 +10,38 @@ import SwiftUI
 struct CollectionView: View {
     @StateObject private var collectionManager = UserCollectionManager.shared
     @State private var showingShareCard = false
+    @State private var showingSortOptions = false
+    @State private var sortOption: SortOption = .alphabetical
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         VStack(spacing: 0) {
             
             HStack {
                 Text("My Collection")
-                    .font(.system(size: 36, weight: .medium))
-                    .foregroundColor(.black)
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(AppColors.primaryText(for: colorScheme))
                 
                 Spacer()
                 
+                // Sort Button
+                Button(action: {
+                    showingSortOptions = true
+                    HapticManager.impact(.light)
+                }) {
+                    Image(systemName: "arrow.up.arrow.down")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(AppColors.accent(for: colorScheme))
+                        .frame(width: 40, height: 40)
+                        .background(AppColors.cardBackground(for: colorScheme))
+                        .clipShape(Circle())
+                        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+                }
+                
+                // Share Button
                 Button(action: {
                     showingShareCard = true
+                    HapticManager.impact(.medium)
                 }) {
                     HStack(spacing: 6) {
                         Image(systemName: "square.and.arrow.up")
@@ -33,13 +52,7 @@ struct CollectionView: View {
                     .foregroundColor(.white)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
-                    .background(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color(hex: "667eea"), Color(hex: "764ba2")]),
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
+                    .background(AppColors.gradient(for: colorScheme))
                     .clipShape(Capsule())
                     .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
                 }
@@ -113,35 +126,87 @@ struct CollectionView: View {
             // Force refresh data when view appears
             collectionManager.refreshData()
         }
+        .background(AppColors.background(for: colorScheme))
         .sheet(isPresented: $showingShareCard) {
-            ShareCardGeneratorView()
+            EnhancedShareCardGenerator()
+        }
+        .actionSheet(isPresented: $showingSortOptions) {
+            ActionSheet(
+                title: Text("Sort Collection"),
+                buttons: SortOption.allCases.map { option in
+                    .default(Text(option.rawValue)) {
+                        sortOption = option
+                        HapticManager.selection()
+                    }
+                } + [.cancel()]
+            )
         }
     }
     
     private func getOwnedReleases() -> [ToyRelease] {
         let allReleases = getAllReleases()
-        print("DEBUG: All available imageNames: \(allReleases.map { $0.imageName })")
-        print("DEBUG: Stored owned items: \(collectionManager.getStoredOwnedItems())")
-        
-        let ownedReleases = allReleases.filter { release in
-            let isOwned = collectionManager.isOwned(release.imageName)
-            if isOwned {
-                print("DEBUG: Found matching owned item: \(release.imageName)")
-            }
-            return isOwned
+        var ownedReleases = allReleases.filter { release in
+            collectionManager.isOwned(release.imageName)
         }
-        print("DEBUG: Owned releases count: \(ownedReleases.count)")
-        print("DEBUG: Owned releases: \(ownedReleases.map { $0.imageName })")
+        
+        // Apply sorting
+        ownedReleases = applySorting(to: ownedReleases)
         return ownedReleases
     }
     
     private func getFavoriteReleases() -> [ToyRelease] {
-        let favoriteReleases = getAllReleases().filter { release in
+        var favoriteReleases = getAllReleases().filter { release in
             collectionManager.isFavorite(release.imageName)
         }
-        print("DEBUG: Favorite releases count: \(favoriteReleases.count)")
-        print("DEBUG: Favorite releases: \(favoriteReleases.map { $0.imageName })")
+        
+        // Apply sorting
+        favoriteReleases = applySorting(to: favoriteReleases)
         return favoriteReleases
+    }
+    
+    private func applySorting(to releases: [ToyRelease]) -> [ToyRelease] {
+        var sortedReleases = releases
+        
+        switch sortOption {
+        case .alphabetical:
+            sortedReleases.sort { $0.name < $1.name }
+        case .series:
+            sortedReleases.sort { getSeriesName(for: $0) < getSeriesName(for: $1) }
+        case .color:
+            sortedReleases.sort { $0.color < $1.color }
+        case .recent:
+            // For now, sort by name as we don't have creation dates
+            sortedReleases.sort { $0.name > $1.name }
+        case .owned:
+            sortedReleases.sort { (a, b) in
+                let aOwned = collectionManager.isOwned(a.imageName)
+                let bOwned = collectionManager.isOwned(b.imageName)
+                if aOwned == bOwned {
+                    return a.name < b.name
+                }
+                return aOwned && !bOwned
+            }
+        case .favorites:
+            sortedReleases.sort { (a, b) in
+                let aFav = collectionManager.isFavorite(a.imageName)
+                let bFav = collectionManager.isFavorite(b.imageName)
+                if aFav == bFav {
+                    return a.name < b.name
+                }
+                return aFav && !bFav
+            }
+        }
+        
+        return sortedReleases
+    }
+    
+    private func getSeriesName(for release: ToyRelease) -> String {
+        for series in toySeries {
+            if series.releases.contains(where: { $0.imageName == release.imageName }) {
+                return series.name
+            }
+        }
+        return "Unknown Series"
     }
     
     private func getAllReleases() -> [ToyRelease] {

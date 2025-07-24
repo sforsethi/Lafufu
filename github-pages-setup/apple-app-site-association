@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "DDM6T9JRUS.com.niyat.lafufu.Lafufu",
+        "paths": [
+          "/events/*"
+        ]
+      }
+    ]
+  }
+}
