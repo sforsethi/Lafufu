@@ -163,33 +163,29 @@ struct PhotoGalleryView: View {
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
+        mainContent
+            .background(AppColors.background(for: colorScheme))
+            .navigationTitle("Photos")
+            .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showingImagePicker) {
+                ImagePicker(selectedImage: $selectedImage, isPresented: $showingImagePicker, sourceType: .photoLibrary)
+            }
+            .actionSheet(isPresented: $showingCamera) {
+                photoActionSheet
+            }
+            .alert("Edit Caption", isPresented: .constant(editingPhoto != nil)) {
+                captionEditAlert
+            }
+            .onChange(of: selectedImage) { image in
+                handleImageSelection(image)
+            }
+    }
+    
+    private var mainContent: some View {
         ScrollView {
-            LazyVGrid(columns: [
-                GridItem(.flexible(), spacing: 8),
-                GridItem(.flexible(), spacing: 8)
-            ], spacing: 12) {
-                // Add photo button
-                Button(action: { showingImagePicker = true }) {
-                    VStack(spacing: 8) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 32))
-                            .foregroundColor(AppColors.accent(for: colorScheme))
-                        
-                        Text("Add Photo")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(AppColors.secondaryText(for: colorScheme))
-                    }
-                    .frame(height: 120)
-                    .frame(maxWidth: .infinity)
-                    .background(AppColors.cardBackground(for: colorScheme))
-                    .cornerRadius(12)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(AppColors.accent(for: colorScheme).opacity(0.3), lineWidth: 2, lineCap: .round, dash: [5])
-                    )
-                }
+            LazyVGrid(columns: gridColumns, spacing: 12) {
+                addPhotoButton
                 
-                // Photos grid
                 ForEach(photoManager.getPhotos(for: toyImageName)) { photo in
                     PhotoGridItem(photo: photo, photoManager: photoManager) {
                         editingPhoto = photo
@@ -199,43 +195,79 @@ struct PhotoGalleryView: View {
             }
             .padding()
         }
-        .background(AppColors.background(for: colorScheme))
-        .navigationTitle("Photos")
-        .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showingImagePicker) {
-            ImagePicker(selectedImage: $selectedImage, isPresented: $showingImagePicker, sourceType: .photoLibrary)
+    }
+    
+    private var gridColumns: [GridItem] {
+        [
+            GridItem(.flexible(), spacing: 8),
+            GridItem(.flexible(), spacing: 8)
+        ]
+    }
+    
+    private var addPhotoButton: some View {
+        Button(action: { showingImagePicker = true }) {
+            addPhotoButtonContent
         }
-        .actionSheet(isPresented: $showingCamera) {
-            ActionSheet(
-                title: Text("Add Photo"),
-                buttons: [
-                    .default(Text("Camera")) {
-                        showingImagePicker = true
-                    },
-                    .default(Text("Photo Library")) {
-                        showingImagePicker = true
-                    },
-                    .cancel()
-                ]
+    }
+    
+    private var addPhotoButtonContent: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "plus.circle.fill")
+                .font(.system(size: 32))
+                .foregroundColor(AppColors.accent(for: colorScheme))
+            
+            Text("Add Photo")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(AppColors.secondaryText(for: colorScheme))
+        }
+        .frame(height: 120)
+        .frame(maxWidth: .infinity)
+        .background(AppColors.cardBackground(for: colorScheme))
+        .cornerRadius(12)
+        .overlay(dashedBorder)
+    }
+    
+    private var dashedBorder: some View {
+        RoundedRectangle(cornerRadius: 12)
+            .stroke(
+                AppColors.accent(for: colorScheme).opacity(0.3),
+                style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [5])
             )
+    }
+    
+    private var photoActionSheet: ActionSheet {
+        ActionSheet(
+            title: Text("Add Photo"),
+            buttons: [
+                .default(Text("Camera")) {
+                    showingImagePicker = true
+                },
+                .default(Text("Photo Library")) {
+                    showingImagePicker = true
+                },
+                .cancel()
+            ]
+        )
+    }
+    
+    @ViewBuilder
+    private var captionEditAlert: some View {
+        TextField("Caption", text: $newCaption)
+        Button("Save") {
+            if let photo = editingPhoto {
+                photoManager.updateCaption(for: photo, caption: newCaption)
+            }
+            editingPhoto = nil
         }
-        .alert("Edit Caption", isPresented: .constant(editingPhoto != nil)) {
-            TextField("Caption", text: $newCaption)
-            Button("Save") {
-                if let photo = editingPhoto {
-                    photoManager.updateCaption(for: photo, caption: newCaption)
-                }
-                editingPhoto = nil
-            }
-            Button("Cancel", role: .cancel) {
-                editingPhoto = nil
-            }
+        Button("Cancel", role: .cancel) {
+            editingPhoto = nil
         }
-        .onChange(of: selectedImage) { image in
-            if let image = image {
-                photoManager.addPhoto(for: toyImageName, image: image)
-                selectedImage = nil
-            }
+    }
+    
+    private func handleImageSelection(_ image: UIImage?) {
+        if let image = image {
+            photoManager.addPhoto(for: toyImageName, image: image)
+            selectedImage = nil
         }
     }
 }
