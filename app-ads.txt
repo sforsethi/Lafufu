@@ -1,0 +1,18 @@
+# app-ads.txt for Lafufu - Collectible Toy Collection App
+# More info: https://iabtechlab.com/ads-txt/
+
+# Google AdMob
+google.com, pub-XXXXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
+
+# Instructions:
+# Replace "pub-XXXXXXXXXXXXXXXXXX" with your actual AdMob Publisher ID
+# You can find your Publisher ID in your AdMob account:
+# 1. Sign in to https://admob.google.com
+# 2. Click "Apps" in the sidebar
+# 3. Click "View all apps"  
+# 4. Click the "app-ads.txt" tab
+# 5. Copy your personalized code snippet
+
+# Additional ad networks can be added below
+# Format: domain.com, publisher-id, RELATIONSHIP, certification-authority-id
+# Example: facebook.com, 123456789, DIRECT, c3e20eee3f780d68
