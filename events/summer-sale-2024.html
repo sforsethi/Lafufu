@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Summer Sale 2024 - Lafufu</title>
+    <meta property="og:title" content="Summer Sale 2024 - Lafufu">
+    <meta property="og:description" content="Special summer discounts on Labubu collectibles!">
+    <meta property="og:image" content="https://sforsethi.github.io/Lafufu/assets/summer-sale.png">
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            padding: 20px; 
+            text-align: center;
+            background: linear-gradient(135deg, #FFE5B4 0%, #FFC584 100%);
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        h1 { 
+            color: #FF6B6B; 
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        .emoji { font-size: 4em; margin: 20px 0; }
+        .cta-button {
+            display: inline-block;
+            padding: 16px 32px;
+            background: #FF6B6B;
+            color: white;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 600;
+            margin: 20px 0;
+            transition: transform 0.2s;
+        }
+        .cta-button:hover { transform: scale(1.05); }
+        .secondary-link {
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="emoji">☀️🎁</div>
+        <h1>Summer Sale 2024</h1>
+        <p style="font-size: 1.2em; color: #666; margin: 20px 0;">
+            Get ready for amazing summer deals on your favorite Labubu collectibles! 
+            Special discounts up to 30% off on selected items.
+        </p>
+        <p style="color: #999;">Sale starts June 21st</p>
+        
+        <a href="lafufu://event/summer-sale-2024" class="cta-button">Open in Lafufu App</a>
+        
+        <p style="margin-top: 40px;">
+            <a href="https://apps.apple.com/app/lafufu" class="secondary-link">
+                Don't have the app? Download from App Store
+            </a>
+        </p>
+    </div>
+    
+    <script>
+        // Auto-redirect to app if on iOS
+        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            window.location.href = 'lafufu://event/summer-sale-2024';
+            setTimeout(() => {
+                // Fallback to App Store if app isn't installed
+                window.location.href = 'https://apps.apple.com/app/lafufu';
+            }, 2500);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Series Launch - Lafufu</title>
+    <meta property="og:title" content="New Series Launch - Lafufu">
+    <meta property="og:description" content="Be the first to discover our latest Labubu series!">
+    <meta property="og:image" content="https://sforsethi.github.io/Lafufu/assets/new-series.png">
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            padding: 20px; 
+            text-align: center;
+            background: linear-gradient(135deg, #E1BEE7 0%, #9C27B0 100%);
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        h1 { 
+            color: #7B1FA2; 
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        .emoji { font-size: 4em; margin: 20px 0; }
+        .cta-button {
+            display: inline-block;
+            padding: 16px 32px;
+            background: #7B1FA2;
+            color: white;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 600;
+            margin: 20px 0;
+            transition: transform 0.2s;
+        }
+        .cta-button:hover { transform: scale(1.05); }
+        .secondary-link {
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="emoji">🚀✨</div>
+        <h1>New Series Launch</h1>
+        <p style="font-size: 1.2em; color: #666; margin: 20px 0;">
+            Get exclusive early access to our brand new Labubu series! 
+            Limited quantities available for pre-order.
+        </p>
+        <p style="color: #999;">Launching Soon</p>
+        
+        <a href="lafufu://event/new-series-launch" class="cta-button">Open in Lafufu App</a>
+        
+        <p style="margin-top: 40px;">
+            <a href="https://apps.apple.com/app/lafufu" class="secondary-link">
+                Don't have the app? Download from App Store
+            </a>
+        </p>
+    </div>
+    
+    <script>
+        // Auto-redirect to app if on iOS
+        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            window.location.href = 'lafufu://event/new-series-launch';
+            setTimeout(() => {
+                // Fallback to App Store if app isn't installed
+                window.location.href = 'https://apps.apple.com/app/lafufu';
+            }, 2500);
+        }
+    </script>
+</body>
+</html>

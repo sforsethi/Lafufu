@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event - Lafufu</title>
+    <meta property="og:title" content="Special Event - Lafufu">
+    <meta property="og:description" content="Join us for an exclusive Lafufu event!">
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            padding: 20px; 
+            text-align: center;
+            background: linear-gradient(135deg, #FFE0B2 0%, #FF9800 100%);
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        h1 { 
+            color: #F57C00; 
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        .emoji { font-size: 4em; margin: 20px 0; }
+        .cta-button {
+            display: inline-block;
+            padding: 16px 32px;
+            background: #F57C00;
+            color: white;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 600;
+            margin: 20px 0;
+            transition: transform 0.2s;
+        }
+        .cta-button:hover { transform: scale(1.05); }
+        .secondary-link {
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="emoji">🎉🎊</div>
+        <h1>Special Event</h1>
+        <p style="font-size: 1.2em; color: #666; margin: 20px 0;">
+            You're invited to an exclusive Lafufu event! 
+            Open the app to discover special offers and new releases.
+        </p>
+        
+        <a href="#" id="app-link" class="cta-button">Open in Lafufu App</a>
+        
+        <p style="margin-top: 40px;">
+            <a href="https://apps.apple.com/app/lafufu" class="secondary-link">
+                Don't have the app? Download from App Store
+            </a>
+        </p>
+    </div>
+    
+    <script>
+        // Get event ID from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const eventId = urlParams.get('id') || 'default';
+        
+        // Update the app link
+        const appLink = document.getElementById('app-link');
+        appLink.href = `lafufu://event/${eventId}`;
+        
+        // Auto-redirect to app if on iOS
+        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            window.location.href = `lafufu://event/${eventId}`;
+            setTimeout(() => {
+                // Fallback to App Store if app isn't installed
+                window.location.href = 'https://apps.apple.com/app/lafufu';
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
