@@ -11,10 +11,12 @@ struct ToyDetailView: View {
     let release: ToyRelease
     @Environment(\.dismiss) private var dismiss
     @StateObject private var collectionManager = UserCollectionManager.shared
+    @StateObject private var wishlistManager = WishlistManager.shared
     @State private var showingImagePicker = false
     @State private var showingImageActionSheet = false
     @State private var selectedImage: UIImage?
     @State private var imageSourceType: UIImagePickerController.SourceType = .photoLibrary
+    @State private var showingWishlistOptions = false
     
     @State private var showShareSheet = false
     @State private var compositeImage: UIImage?
@@ -26,6 +28,10 @@ struct ToyDetailView: View {
     
     private var isOwned: Bool {
         collectionManager.isOwned(release.imageName)
+    }
+    
+    private var isInWishlist: Bool {
+        wishlistManager.isInWishlist(release.imageName)
     }
     
     var body: some View {
@@ -128,29 +134,29 @@ struct ToyDetailView: View {
                         
                         // Action Buttons
                         VStack(spacing: 16) {
-                            HStack(spacing: 16) {
+                            HStack(spacing: 12) {
                                 // Favorite Button
                                 Button {
                                     withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                                         collectionManager.toggleFavorite(release.imageName)
                                     }
                                 } label: {
-                                    HStack(spacing: 8) {
+                                    VStack(spacing: 4) {
                                         Image(systemName: isFavorite ? "heart.fill" : "heart")
-                                            .font(.system(size: 18, weight: .semibold))
+                                            .font(.system(size: 20, weight: .semibold))
                                             .foregroundColor(isFavorite ? .white : Color.red)
                                         
-                                        Text(isFavorite ? "Favorited" : "Add to Favorites")
-                                            .font(.system(size: 16, weight: .semibold))
+                                        Text(isFavorite ? "Liked" : "Like")
+                                            .font(.system(size: 12, weight: .semibold))
                                             .foregroundColor(isFavorite ? .white : Color.red)
                                     }
-                                    .padding(.horizontal, 20)
+                                    .frame(maxWidth: .infinity)
                                     .padding(.vertical, 12)
                                     .background(
-                                        RoundedRectangle(cornerRadius: 25)
+                                        RoundedRectangle(cornerRadius: 16)
                                             .fill(isFavorite ? Color.red : Color.clear)
                                             .overlay(
-                                                RoundedRectangle(cornerRadius: 25)
+                                                RoundedRectangle(cornerRadius: 16)
                                                     .stroke(Color.red, lineWidth: 2)
                                             )
                                     )
@@ -163,27 +169,60 @@ struct ToyDetailView: View {
                                         collectionManager.toggleOwned(release.imageName)
                                     }
                                 } label: {
-                                    HStack(spacing: 8) {
+                                    VStack(spacing: 4) {
                                         Image(systemName: isOwned ? "checkmark.circle.fill" : "plus.circle")
-                                            .font(.system(size: 18, weight: .semibold))
+                                            .font(.system(size: 20, weight: .semibold))
                                             .foregroundColor(isOwned ? .white : Color.green)
                                         
-                                        Text(isOwned ? "Owned" : "I Own This")
-                                            .font(.system(size: 16, weight: .semibold))
+                                        Text(isOwned ? "Owned" : "Own It")
+                                            .font(.system(size: 12, weight: .semibold))
                                             .foregroundColor(isOwned ? .white : Color.green)
                                     }
-                                    .padding(.horizontal, 20)
+                                    .frame(maxWidth: .infinity)
                                     .padding(.vertical, 12)
                                     .background(
-                                        RoundedRectangle(cornerRadius: 25)
+                                        RoundedRectangle(cornerRadius: 16)
                                             .fill(isOwned ? Color.green : Color.clear)
                                             .overlay(
-                                                RoundedRectangle(cornerRadius: 25)
+                                                RoundedRectangle(cornerRadius: 16)
                                                     .stroke(Color.green, lineWidth: 2)
                                             )
                                     )
                                 }
                                 .scaleEffect(isOwned ? 1.05 : 1.0)
+                                
+                                // Wishlist Button
+                                if !isOwned {
+                                    Button {
+                                        if isInWishlist {
+                                            wishlistManager.removeFromWishlist(release.imageName)
+                                        } else {
+                                            showingWishlistOptions = true
+                                        }
+                                        HapticManager.impact(.medium)
+                                    } label: {
+                                        VStack(spacing: 4) {
+                                            Image(systemName: isInWishlist ? "star.fill" : "star")
+                                                .font(.system(size: 20, weight: .semibold))
+                                                .foregroundColor(isInWishlist ? .white : Color.orange)
+                                            
+                                            Text(isInWishlist ? "Wishlisted" : "Wishlist")
+                                                .font(.system(size: 12, weight: .semibold))
+                                                .foregroundColor(isInWishlist ? .white : Color.orange)
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .fill(isInWishlist ? Color.orange : Color.clear)
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 16)
+                                                        .stroke(Color.orange, lineWidth: 2)
+                                                )
+                                        )
+                                    }
+                                    .scaleEffect(isInWishlist ? 1.05 : 1.0)
+                                }
                             }
                             
                             // Add Photo Button (only show if owned)
@@ -363,6 +402,9 @@ struct ToyDetailView: View {
         }
         .sheet(isPresented: $showShareSheet) {
             ShareSheetWrapper(image: compositeImage)
+        }
+        .sheet(isPresented: $showingWishlistOptions) {
+            WishlistOptionsSheet(toyImageName: release.imageName)
         }
 
 
